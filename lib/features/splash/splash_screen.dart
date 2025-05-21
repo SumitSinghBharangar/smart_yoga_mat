@@ -31,9 +31,9 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Center(
         child: Lottie.asset(
           'assets/lotties/yoga.json', // Make sure to add your Lottie JSON file to assets
-          width: 200,
-          height: 200,
-          fit: BoxFit.contain,
+          width: 400,
+          height: 400,
+          fit: BoxFit.cover,
         ),
       ),
     );
