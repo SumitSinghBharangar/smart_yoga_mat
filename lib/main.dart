@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:provider/provider.dart';
+// import 'package:provider/provider.dart';
 import 'package:smart_yoga_mat/features/splash/splash_screen.dart';
 
 void main() {
-  runApp(
-    MultiProvider(
-      providers: [
-        // ChangeNotifierProvider(create: (_) => AppState()),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  runApp(MyApp()
+      // MultiProvider(
+      //   providers: [
+      //     // ChangeNotifierProvider(create: (_) => AppState()),
+      //   ],
+      //   child: const MyApp(),
+      // ),
+      );
 }
 
 class MyApp extends StatelessWidget {
