@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:smart_yoga_mat/common/buttons/dynamic_button.dart';
 import 'package:smart_yoga_mat/common/buttons/scale_button.dart';
 import 'package:smart_yoga_mat/features/connectons/screens/connection_screen.dart';
+import 'package:smart_yoga_mat/features/features_and_update/features_update_screen.dart';
 import 'package:smart_yoga_mat/features/utils/utils.dart';
 import 'package:smart_yoga_mat/features/widgets/feature_card.dart';
 
@@ -87,22 +89,54 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 20,
               ),
               ScaleButton(
-                onTap: () {},
-                child: OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 50),
-                    side: const BorderSide(color: Colors.blue),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                onTap: () {
+                  Utils.go(
+                    context: context,
+                    screen: FeaturesUpdateScreen(),
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.blue,
                     ),
                   ),
-                  child: const Text(
-                    'View Features',
-                    style: TextStyle(fontSize: 18, color: Colors.blue),
+                  child: Text(
+                    "View Features",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.blue,
+                    ),
                   ),
                 ),
               ),
+              // ScaleButton(
+              //   onTap: () {},
+              //   child: OutlinedButton(
+              //     onPressed: () {
+              //       Utils.go(
+              //         context: context,
+              //         screen: FeaturesUpdateScreen(),
+              //       );
+              //     },
+              //     style: OutlinedButton.styleFrom(
+              //       minimumSize: const Size(double.infinity, 50),
+              //       side: const BorderSide(color: Colors.blue),
+              //       shape: RoundedRectangleBorder(
+              //         borderRadius: BorderRadius.circular(8),
+              //       ),
+              //     ),
+              //     child: const Text(
+              //       'View Features',
+              //       style: TextStyle(fontSize: 18, color: Colors.blue),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),

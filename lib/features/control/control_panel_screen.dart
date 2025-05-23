@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:smart_yoga_mat/common/buttons/scale_button.dart';
+import 'package:smart_yoga_mat/features/control/session_detil_screen.dart';
+import 'package:smart_yoga_mat/features/music_&_sound/music_sound_screen.dart';
+import 'package:smart_yoga_mat/features/utils/utils.dart';
 
 class ControlPanelScreen extends StatefulWidget {
   const ControlPanelScreen({super.key});
@@ -49,11 +53,10 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
         actions: [
           IconButton(
             onPressed: () {
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //       builder: (_) => const MusicSoundsScreen()),
-              // );
+              Utils.go(
+                context: context,
+                screen: MusicSoundScreen(),
+              );
             },
             icon: Icon(
               Icons.music_note_rounded,
@@ -109,13 +112,12 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                 ),
                 const SizedBox(height: 20),
                 if (_isSessionActive)
-                  GestureDetector(
+                  ScaleButton(
                     onTap: () {
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //       builder: (_) => const SessionDetailsScreen()),
-                      // );
+                      Utils.go(
+                        context: context,
+                        screen: SessionDetilScreen(),
+                      );
                     },
                     child: Container(
                       padding: const EdgeInsets.all(16),

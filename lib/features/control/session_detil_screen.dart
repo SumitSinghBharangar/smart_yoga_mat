@@ -10,6 +10,12 @@ class SessionDetilScreen extends StatefulWidget {
 class _SessionDetilScreenState extends State<SessionDetilScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold();
+    
+
+    return Scaffold(
+      
+    );
   }
+
+  
 }
