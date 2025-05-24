@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:smart_yoga_mat/common/buttons/scale_button.dart';
+import 'package:provider/provider.dart';
+import 'package:smart_yoga_mat/common/models/session_model.dart';
 import 'package:smart_yoga_mat/features/control/session_detil_screen.dart';
 import 'package:smart_yoga_mat/features/music_&_sound/music_sound_screen.dart';
-import 'package:smart_yoga_mat/features/utils/utils.dart';
+import 'package:smart_yoga_mat/provider/app_state.dart';
 
 class ControlPanelScreen extends StatefulWidget {
   const ControlPanelScreen({super.key});
@@ -16,17 +16,42 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
   bool _isSessionActive = false;
   String _activeSession = '';
   String _sessionDetails = '';
+  final String _matTemp = '78°F';
+  final String _heartRateZone = 'Light';
+  final String _duration = '8 minutes';
+  final String _calories = '45';
+  DateTime _startTime = DateTime.now();
 
   void _startSession(String session) {
     setState(() {
       _isSessionActive = true;
       _activeSession = session;
+      _startTime = DateTime.now();
       _sessionDetails =
-          '$session Session Active\nMat Temperature: 78°F • Duration: 8 minutes\nHeart Rate Zone: Light • Calories: 45';
+          '$session Session Active\nMat Temperature: $_matTemp • Duration: $_duration\nHeart Rate Zone: $_heartRateZone • Calories: $_calories';
     });
   }
 
   void _stopSession() {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final endTime = DateTime.now();
+    final durationMinutes = endTime.difference(_startTime).inMinutes.toString();
+
+    // Create a SessionModel instance
+    final session = SessionModel(
+      sessionType: _activeSession,
+      duration: '$durationMinutes minutes',
+      calories: _calories,
+      date: endTime.toString(),
+      matTemp: _matTemp,
+      heartRateZone: _heartRateZone,
+      createdAt: endTime,
+      id: '', // Will be set by FirestoreService
+    );
+
+    // Save to Firestore via Provider
+    appState.addSession(session);
+
     setState(() {
       _isSessionActive = false;
       _activeSession = '';
@@ -36,61 +61,54 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // final appState = Provider.of<AppState>(context);
+    final appState = Provider.of<AppState>(context);
+
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: Icon(
-            Icons.arrow_back,
-            color: Colors.white,
-          ),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Utils.go(
-                context: context,
-                screen: MusicSoundScreen(),
-              );
-            },
-            icon: Icon(
-              Icons.music_note_rounded,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: 16.w,
-          ),
+          padding: const EdgeInsets.all(16.0),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "fd",
-                  // 'Connected to ${appState.connectedDevice}',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 26.sp,
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () {
+                        Navigator.pop(context); // Back to Home Screen
+                      },
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.music_note),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => MusicSoundScreen()),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.green[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Connected to ${appState.connectedDevice}',
+                    style: const TextStyle(
+                        color: Colors.green, fontWeight: FontWeight.bold),
                   ),
                 ),
-                SizedBox(height: 10.h),
-                Text(
+                const SizedBox(height: 20),
+                const Text(
                   'Choose Your Session',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
                 _buildSessionCard(
@@ -112,28 +130,25 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                 ),
                 const SizedBox(height: 20),
                 if (_isSessionActive)
-                  ScaleButton(
+                  GestureDetector(
                     onTap: () {
-                      Utils.go(
-                        context: context,
-                        screen: SessionDetilScreen(),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => SessionDetilScreen()),
                       );
                     },
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                          // color: Colors.blue[50],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.yellow.shade100)),
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       child: Row(
                         children: [
                           Expanded(
                             child: Text(
                               _sessionDetails,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.white,
-                              ),
+                              style: const TextStyle(fontSize: 14),
                             ),
                           ),
                           ElevatedButton(
@@ -153,11 +168,7 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                 const SizedBox(height: 20),
                 const Text(
                   'Today’s Progress',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
                 Row(
@@ -168,9 +179,6 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                     _buildProgressCard('287', 'Calories'),
                     _buildProgressCard('85°F', 'Max Temp'),
                   ],
-                ),
-                SizedBox(
-                  height: 10.h,
                 ),
               ],
             ),
@@ -185,11 +193,8 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
+        color: Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Colors.green,
-          width: 1,
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,10 +204,7 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
               Container(
                 width: 40,
                 height: 40,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(5),
-                  color: Colors.blue[100],
-                ),
+                color: Colors.blue[100],
                 child: const Icon(Icons.fitness_center, color: Colors.blue),
               ),
               const SizedBox(width: 16),
@@ -212,11 +214,8 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                   children: [
                     Text(
                       title,
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     Text(
                       subtitle,
@@ -239,12 +238,7 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Progress: $progress',
-                  style: TextStyle(
-                    color: Colors.white,
-                  ),
-                ),
+                Text('Progress: $progress'),
               ],
             ),
             const SizedBox(height: 4),
@@ -261,12 +255,7 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: Text(
-              'Begin $title',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
+            child: Text('Begin $title'),
           ),
         ],
       ),
@@ -277,23 +266,16 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.all(7),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
+          color: Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: Colors.green,
-            width: 1,
-          ),
         ),
         child: Column(
           children: [
             Text(
               value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             Text(
               label,
