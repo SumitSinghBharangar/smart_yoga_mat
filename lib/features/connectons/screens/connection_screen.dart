@@ -1,9 +1,7 @@
+import 'dart:typed_data'; // For Uint8List
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
-import 'package:smart_yoga_mat/common/buttons/scale_button.dart';
-import 'package:smart_yoga_mat/features/control/control_panel_screen.dart';
-import 'package:smart_yoga_mat/features/utils/utils.dart';
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart'; // For BLE scanning
 import 'package:smart_yoga_mat/provider/app_state.dart';
 
 class ConnectionScreen extends StatefulWidget {
@@ -14,53 +12,177 @@ class ConnectionScreen extends StatefulWidget {
 }
 
 class _ConnectionScreenState extends State<ConnectionScreen> {
-  List<Map<String, String>> _devices = [];
-  bool _isScanning = false;
+  bool _isLoading = true;
+  bool _isConnecting = false;
   String? _errorMessage;
+  List<DiscoveredDevice> _devices = [];
+  late FlutterReactiveBle _ble;
+  List<String> _deviceNames = []; // To store device names for display
+  static const String predefinedMatName =
+      'SmartYogaMat-Pro'; // Predefined mat name
 
-  void _scanForDevices(String connectionType) async {
+  @override
+  void initState() {
+    super.initState();
+    _ble = FlutterReactiveBle();
+    _checkBluetoothAndScan();
+  }
+
+  void _checkBluetoothAndScan() async {
     setState(() {
-      _isScanning = true;
-      _devices = [];
+      _isLoading = true;
       _errorMessage = null;
+      _devices = [];
+      _deviceNames = [];
     });
 
     try {
-      // Simulate scanning for devices with a delay
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Simulate a potential error (e.g., 20% chance of failure)
-      if (DateTime.now().millisecond % 5 == 0) {
-        throw Exception('Failed to scan for devices. Please try again.');
-      }
-
-      setState(() {
-        _isScanning = false;
-        _devices = [
-          {
-            'name': '$connectionType SmartMat Pro - SN001',
-            'details': 'Signal: Strong • Battery: 85%',
-          },
-          {
-            'name': '$connectionType SmartMat Lite - SN002',
-            'details': 'Signal: Medium • Battery: 72%',
-          },
-        ];
+      // Check Bluetooth state (permissions should already be granted from Home Screen)
+      _ble.statusStream.listen((status) {
+        if (status == BleStatus.ready) {
+          _scanForDevices();
+        } else {
+          setState(() {
+            _isLoading = false;
+            _errorMessage =
+                'Bluetooth is not enabled. Please enable Bluetooth to continue.';
+          });
+        }
+      }, onError: (e) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Error checking Bluetooth status: $e';
+        });
       });
     } catch (e) {
       setState(() {
-        _isScanning = false;
+        _isLoading = false;
         _errorMessage = e.toString();
       });
     }
   }
 
-  void _pairDevice(String deviceName, AppState appState) {
-    appState.setConnectionStatus(true, deviceName);
-    Utils.go(
-      context: context,
-      screen: const ControlPanelScreen(),
-    );
+  void _scanForDevices() async {
+    try {
+      // Real BLE scanning (uncomment for deployment on real device)
+      /*
+      _ble.scanForDevices(withServices: []).listen((device) {
+        if (device.name == predefinedMatName && !_deviceNames.contains(device.name)) {
+          setState(() {
+            _devices.add(device);
+            _deviceNames.add(device.name);
+          });
+        }
+      }, onError: (e) {
+        throw Exception('Failed to scan for devices: $e');
+      });
+      // Wait for scanning to complete (e.g., 5 seconds)
+      await Future.delayed(const Duration(seconds: 5));
+      */
+
+      // Simulated scanning for predefined mat name
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Simulate a potential error
+      if (DateTime.now().millisecond % 5 == 0) {
+        throw Exception(
+            'BLE error: Failed to scan for devices. Please try again.');
+      }
+
+      setState(() {
+        _isLoading = false;
+        // Only show the predefined mat name
+        _deviceNames = [predefinedMatName];
+        _devices = _deviceNames
+            .map((name) => DiscoveredDevice(
+                  id: name,
+                  name: name,
+                  serviceData: const {},
+                  manufacturerData: Uint8List(0),
+                  rssi: -50,
+                  serviceUuids: const [],
+                ))
+            .toList();
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
+    }
+  }
+
+  void _connectToDevice(DiscoveredDevice device) async {
+    setState(() {
+      _isConnecting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Real BLE connection (uncomment for deployment on real device)
+      /*
+      _ble.connectToDevice(id: device.id).listen((connectionState) {
+        if (connectionState.connectionState == DeviceConnectionState.connected) {
+          // Connection successful
+          final appState = Provider.of<AppState>(context, listen: false);
+          appState.connectToDevice(device);
+          setState(() {
+            _isConnecting = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Connected to ${device.name} via BLE'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      }, onError: (e) {
+        throw Exception('Failed to connect: $e');
+      });
+      */
+
+      // Simulated connection
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Simulate a potential connection error
+      if (DateTime.now().millisecond % 5 == 0) {
+        throw Exception(
+            'Failed to connect to ${device.name}. Please try again.');
+      }
+
+      final appState = Provider.of<AppState>(context, listen: false);
+      appState.connectToDevice(device);
+
+      setState(() {
+        _isConnecting = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Connected to ${device.name} via BLE'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      setState(() {
+        _isConnecting = false;
+        _errorMessage = e.toString();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Connection error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
@@ -72,229 +194,125 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         leading: IconButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            icon: const Icon(
-              Icons.arrow_back,
-              color: Colors.white,
-            )),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Connect Your Mat',
-                style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Make sure your mat is powered on and in pairing mode',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-              SizedBox(height: 20.h),
-              ScaleButton(
-                onTap: _isScanning ? () {} : () => _scanForDevices('Bluetooth'),
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(14.h),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: Colors.blue,
-                  ),
-                  child: Text(
-                    _isScanning ? 'Scanning...' : 'Connect via Bluetooth',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 18.h,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-              SizedBox(height: 20.h),
-              ScaleButton(
-                onTap: _isScanning ? () {} : () => _scanForDevices('Wi-Fi'),
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(14.h),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: Colors.green,
-                  ),
-                  child: Text(
-                    _isScanning ? 'Scanning...' : 'Connect via Wi-Fi',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 18.h,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-              SizedBox(height: 20.h),
-              const Text(
-                'Available Devices',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 10),
-              _isScanning
-                  ? const Center(
-                      child: Column(
-                        children: [
-                          CircularProgressIndicator(color: Colors.white),
-                          SizedBox(height: 10),
-                          Text(
-                            'Scanning for devices...',
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                        ],
-                      ),
-                    )
-                  : _errorMessage != null
-                      ? Center(
-                          child: Column(
-                            children: [
-                              Text(
-                                _errorMessage!,
-                                style: const TextStyle(
-                                    color: Colors.red, fontSize: 16),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 10),
-                              ElevatedButton(
-                                onPressed: () => _scanForDevices(
-                                    'Bluetooth'), // Retry with Bluetooth as default
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: const Text('Retry'),
-                              ),
-                            ],
-                          ),
-                        )
-                      : _devices.isEmpty
-                          ? const Center(
-                              child: Text(
-                                'No devices found',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            )
-                          : Column(
-                              children: _devices.map((device) {
-                                return _buildDeviceTile(
-                                  context,
-                                  device['name']!,
-                                  device['details']!,
-                                );
-                              }).toList(),
-                            ),
-              const SizedBox(height: 20),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.green,
-                      width: 1,
-                    )),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Connection Tips',
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      '• Hold the power button for 3 seconds',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    const Text(
-                      '• LED should flash blue when ready',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    const Text(
-                      '• Stay within 10 feet of your mat',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Colors.white,
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildDeviceTile(
-      BuildContext context, String deviceName, String details) {
-    final appState = Provider.of<AppState>(context, listen: false);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.green, width: 1),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            color: Colors.blue[100],
-            child: const Icon(Icons.devices, color: Colors.blue),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  deviceName,
-                  style: const TextStyle(
-                    fontSize: 16,
+                const SizedBox(height: 10),
+                const Text(
+                  'Connect to Your Mat',
+                  style: TextStyle(
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
+                const SizedBox(height: 8),
                 Text(
-                  details,
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  appState.isConnected
+                      ? 'Connected to: ${appState.deviceName ?? "Unknown Device"}'
+                      : 'Find and connect to your Smart Yoga Mat',
+                  style: const TextStyle(fontSize: 16, color: Colors.grey),
                 ),
+                const SizedBox(height: 20),
+                if (_isLoading)
+                  const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  )
+                else if (_errorMessage != null)
+                  Center(
+                    child: Column(
+                      children: [
+                        Text(
+                          _errorMessage!,
+                          style:
+                              const TextStyle(color: Colors.red, fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+                        ElevatedButton(
+                          onPressed: _checkBluetoothAndScan,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (_devices.isEmpty)
+                  const Center(
+                    child: Text(
+                      'No Smart Yoga Mat found',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
+                else
+                  Column(
+                    children: _devices
+                        .asMap()
+                        .entries
+                        .map(
+                          (entry) => Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: ElevatedButton(
+                              onPressed: _isConnecting
+                                  ? null
+                                  : () => _connectToDevice(entry.value),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey[800],
+                                minimumSize: const Size(double.infinity, 50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    entry.value.name,
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                  _isConnecting
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.bluetooth,
+                                          color: Colors.blue,
+                                        ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
               ],
             ),
           ),
-          ElevatedButton(
-            onPressed: () => _pairDevice(deviceName, appState),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Pair'),
-          ),
-        ],
+        ),
       ),
     );
   }

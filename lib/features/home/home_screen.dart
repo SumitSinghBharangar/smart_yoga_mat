@@ -1,258 +1,216 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:smart_yoga_mat/common/buttons/dynamic_button.dart';
-import 'package:smart_yoga_mat/common/buttons/scale_button.dart';
+
 import 'package:smart_yoga_mat/features/connectons/screens/connection_screen.dart';
 import 'package:smart_yoga_mat/features/control/control_panel_screen.dart';
-import 'package:smart_yoga_mat/features/control/session_detil_screen.dart';
-import 'package:smart_yoga_mat/features/features_and_update/features_update_screen.dart';
-import 'package:smart_yoga_mat/features/music_&_sound/music_sound_screen.dart';
 import 'package:smart_yoga_mat/features/utils/utils.dart';
-import 'package:smart_yoga_mat/features/widgets/feature_card.dart';
 import 'package:smart_yoga_mat/provider/app_state.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  bool _isLoading = true;
-  String? _errorMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchRecentActivity();
-  }
-
-  void _fetchRecentActivity() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
+  Future<void> _requestBluetoothPermissions(BuildContext context) async {
     try {
-      // Simulate fetching recent activity data with a delay
-      await Future.delayed(const Duration(seconds: 1));
+      // Request necessary permissions for BLE (Android only, iOS handles automatically)
+      Map<Permission, PermissionStatus> statuses = await [
+        Permission.bluetooth,
+        Permission.bluetoothScan,
+        Permission.bluetoothConnect,
+        Permission.locationWhenInUse, // Needed for BLE scanning on Android
+      ].request();
 
-      // Simulate a potential error (e.g., 20% chance of failure)
-      if (DateTime.now().millisecond % 5 == 0) {
-        throw Exception('Failed to load recent activity. Please try again.');
+      // Check if any permissions are denied
+      bool allGranted = statuses[Permission.bluetoothScan] ==
+              PermissionStatus.granted &&
+          statuses[Permission.bluetoothConnect] == PermissionStatus.granted &&
+          statuses[Permission.locationWhenInUse] == PermissionStatus.granted;
+
+      if (!allGranted) {
+        // Check if any permission is permanently denied
+        bool isPermanentlyDenied =
+            await Permission.bluetoothScan.isPermanentlyDenied ||
+                await Permission.bluetoothConnect.isPermanentlyDenied ||
+                await Permission.locationWhenInUse.isPermanentlyDenied;
+
+        if (isPermanentlyDenied) {
+          // Show SnackBar with action to open settings
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Bluetooth and location permissions are required. Please enable them in app settings.',
+              ),
+              backgroundColor: Colors.red,
+              action: SnackBarAction(
+                label: 'Settings',
+                textColor: Colors.white,
+                onPressed: () {
+                  openAppSettings(); // Opens app settings
+                },
+              ),
+            ),
+          );
+          return;
+        }
+
+        throw Exception(
+            'Required permissions not granted. Please grant Bluetooth and location permissions to connect to the mat.');
       }
 
-      final appState = Provider.of<AppState>(context, listen: false);
-      if (appState.sessions == null) {
-        throw Exception('Failed to load sessions');
-      }
-
-      setState(() {
-        _isLoading = false;
-      });
+      // Navigate to Connection Screen if permissions are granted
+      Utils.go(context: context, screen: const ConnectionScreen());
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = e.toString();
-      });
+      // Show error message if an error occurs
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
-    final recentSession =
-        appState.sessions.isNotEmpty ? appState.sessions[0] : null;
+    final appState = Provider.of<AppState>(
+        context); // Access AppState to show connection status
 
     return Scaffold(
       backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: const Text(
+          'SmartYogaMat',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Smart Yoga Mate",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Text(
-                'Your intelligent companion for mindful practice',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-              const SizedBox(height: 20),
-              Column(
-                children: [
-                  ScaleButton(
-                    onTap: () {
-                      if (appState.isConnected) {
-                        Utils.go(
-                          context: context,
-                          screen: const ControlPanelScreen(),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please connect to your mat first'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    },
-                    child: FeatureCard(
-                      icon: Icons.fitness_center,
-                      iconColor: Colors.amber,
-                      title: 'Guided Sessions',
-                      description:
-                          'Personalized yoga routines with real-time feedback',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ScaleButton(
-                    onTap: () {
-                      Utils.go(
-                        context: context,
-                        screen: const MusicSoundScreen(),
-                      );
-                    },
-                    child: FeatureCard(
-                      icon: Icons.music_note,
-                      iconColor: Colors.purple,
-                      title: 'Ambient Sounds',
-                      description:
-                          'Relaxing soundscapes to enhance your practice',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ScaleButton(
-                    onTap: () {
-                      Utils.go(
-                        context: context,
-                        screen: const SessionDetailsScreen(),
-                      );
-                    },
-                    child: FeatureCard(
-                      icon: Icons.bar_chart,
-                      iconColor: Colors.blue,
-                      title: 'Progress Tracking',
-                      description:
-                          'Monitor your yoga journey with detailed analytics',
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              if (_isLoading)
-                const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                )
-              else if (_errorMessage != null)
-                Center(
-                  child: Column(
-                    children: [
-                      Text(
-                        _errorMessage!,
-                        style: const TextStyle(color: Colors.red, fontSize: 16),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 10),
-                      ElevatedButton(
-                        onPressed: _fetchRecentActivity,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.green, width: 1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Recent Activity',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        recentSession != null
-                            ? '${recentSession.sessionType} Session • ${recentSession.duration}'
-                            : 'No recent sessions',
-                        style:
-                            const TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                      if (recentSession != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'Date: ${recentSession.date.split(' ')[0]} • Calories: ${recentSession.calories}',
-                          style:
-                              const TextStyle(fontSize: 14, color: Colors.grey),
-                        ),
-                      ],
-                    ],
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                const Text(
+                  'Welcome to SmartYogaMat',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
-              const Spacer(),
-              Center(
-                child: DynamicButton.fromText(
-                  text: "Connect to mat",
-                  onPressed: () {
-                    Utils.go(
-                      context: context,
-                      screen: const ConnectionScreen(),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 20),
-              ScaleButton(
-                onTap: () {
-                  Utils.go(
-                    context: context,
-                    screen: const FeaturesUpdateScreen(),
-                  );
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.blue),
+                const SizedBox(height: 10),
+                Text(
+                  appState.isConnected
+                      ? 'Connected to: ${appState.deviceName ?? "Unknown Device"}'
+                      : 'Not connected to any device',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
                   ),
-                  child: Text(
-                    "View Features",
-                    textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Your smart companion for yoga practice.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                ElevatedButton(
+                  onPressed: () => _requestBluetoothPermissions(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(8), // Consistent border radius
+                    ),
+                  ),
+                  child: const Text(
+                    'Connect to Mat',
                     style: TextStyle(
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.blue,
+                      fontSize: 18,
+                      color: Colors.white,
                     ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                const Text(
+                  'Features',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _buildFeatureCard(
+                  context: context,
+                  title: 'Control Panel',
+                  description: 'Manage your yoga sessions and mat settings.',
+                  onTap: () => Utils.go(
+                      context: context, screen: const ControlPanelScreen()),
+                ),
+              ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureCard({
+    required BuildContext context,
+    required String title,
+    required String description,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(16), // Consistent padding
+        decoration: BoxDecoration(
+          color: Colors.grey[800],
+          borderRadius: BorderRadius.circular(8), // Consistent border radius
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.white,
+              size: 20, // Consistent icon size
+            ),
+          ],
         ),
       ),
     );

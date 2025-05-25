@@ -111,6 +111,12 @@ class _FeaturesUpdateScreenState extends State<FeaturesUpdateScreen> {
       // Simulate submitting feedback to Firestore with a delay
       await Future.delayed(const Duration(seconds: 1));
 
+      // Simulate a storage-related error (e.g., 20% chance of failure)
+      if (DateTime.now().millisecond % 5 == 0) {
+        throw Exception(
+            'Device storage is full. Please free up space and try again.');
+      }
+
       // In a real app, you would use Firestore to store the feedback
       // Example: await FirebaseFirestore.instance.collection('feedback').add({
       //   'message': _feedbackController.text,
@@ -135,9 +141,15 @@ class _FeaturesUpdateScreenState extends State<FeaturesUpdateScreen> {
       setState(() {
         _isSubmittingFeedback = false;
       });
+
+      // Check if the error is storage-related
+      final errorMessage = e.toString().contains('storage')
+          ? e.toString()
+          : 'Failed to submit feedback: $e';
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to submit feedback: $e'),
+          content: Text(errorMessage),
           backgroundColor: Colors.red,
         ),
       );

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:smart_yoga_mat/common/buttons/scale_button.dart';
 
 class MusicSoundScreen extends StatefulWidget {
   const MusicSoundScreen({super.key});
@@ -18,6 +17,7 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
   bool _isForestPlaying = false;
   bool _isLoading = true;
   String? _errorMessage;
+  bool _canTapPlayPause = true; // Debounce control
   String selectedPreset = 'Custom Mix';
 
   @override
@@ -43,7 +43,6 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
 
       setState(() {
         _isLoading = false;
-        // Default values are already set, so no need to update them here
       });
     } catch (e) {
       setState(() {
@@ -99,6 +98,18 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
           // Optionally set default values or keep current settings
           break;
       }
+    });
+  }
+
+  void _debouncePlayPause(Function action) async {
+    if (!_canTapPlayPause) return;
+    setState(() {
+      _canTapPlayPause = false;
+    });
+    action();
+    await Future.delayed(const Duration(milliseconds: 500)); // 500ms debounce
+    setState(() {
+      _canTapPlayPause = true;
     });
   }
 
@@ -230,7 +241,6 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
                       Row(
                         children: [
                           _buildPresetButton('Custom Mix', Colors.grey),
-                          Spacer(),
                           _buildPresetButton('Morning Flow', Colors.grey),
                         ],
                       ),
@@ -238,7 +248,6 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
                       Row(
                         children: [
                           _buildPresetButton('Evening Calm', Colors.grey),
-                          Spacer(),
                           _buildPresetButton('Deep Focus', Colors.grey),
                         ],
                       ),
@@ -297,39 +306,40 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
   }
 
   Widget _buildPresetButton(String label, Color color) {
-    // You'll need to track which preset is selected
-    // Add this variable to your widget's state if not already present:
-    // String? selectedPreset;
-
     bool isSelected = selectedPreset == label;
 
-    return ScaleButton(
-      onTap: () {
-        setState(() {
-          selectedPreset = label;
-          _applyPreset(label); // Update selected preset
-        });
-        _applyPreset(label);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        width: MediaQuery.of(context).size.width / 2.3,
-        curve: Curves.easeInOut,
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.lightGreen.shade200 : color,
-          border: Border.all(
-            color: isSelected ? Colors.green.shade800 : Colors.transparent,
-            width: 2,
-          ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.green.shade800 : Colors.white,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              selectedPreset = label;
+            });
+            _applyPreset(label);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.lightGreen.shade200 : color,
+              border: Border.all(
+                color: isSelected ? Colors.green.shade800 : Colors.transparent,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            child: Center(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.green.shade800 : Colors.white,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ),
@@ -407,9 +417,9 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
                     IconButton(
                       icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow,
                           color: playColor),
-                      onPressed: () {
+                      onPressed: () => _debouncePlayPause(() {
                         onVolumeChanged(isPlaying ? 0 : 50);
-                      },
+                      }),
                     ),
                   ],
                 ),
