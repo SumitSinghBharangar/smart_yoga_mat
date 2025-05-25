@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # SmartYogaMat App
 
 A Flutter app to connect and control a Smart Yoga Mat via Bluetooth.
@@ -81,3 +82,5 @@ bash
 
 flutter clean
 flutter pub get
+=======
+>>>>>>> 19ff7c2 (completed)

@@ -107,29 +107,33 @@ class _ProductShowcaseScreenState extends State<ProductShowcaseScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+          ),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () {
-                        Navigator.pop(
-                            context); // Back to Features & Updates Screen
-                      },
-                    ),
-                    const Spacer(),
-                  ],
-                ),
-                const SizedBox(height: 10),
                 const Text(
                   'Discover New Features',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
@@ -210,7 +214,9 @@ class _ProductShowcaseScreenState extends State<ProductShowcaseScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        border: Border.all(
+          color: Colors.green,
+        ),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -224,7 +230,11 @@ class _ProductShowcaseScreenState extends State<ProductShowcaseScreen> {
           const SizedBox(height: 16),
           Text(
             title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -242,7 +252,12 @@ class _ProductShowcaseScreenState extends State<ProductShowcaseScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: Text(buttonLabel),
+            child: Text(
+              buttonLabel,
+              style: TextStyle(
+                color: Colors.white,
+              ),
+            ),
           ),
         ],
       ),

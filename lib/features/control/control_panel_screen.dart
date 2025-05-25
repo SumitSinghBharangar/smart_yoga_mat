@@ -9,17 +9,17 @@ class ControlPanelScreen extends StatefulWidget {
   const ControlPanelScreen({super.key});
 
   @override
-  _ControlPanelScreenState createState() => _ControlPanelScreenState();
+  State<ControlPanelScreen> createState() => _ControlPanelScreenState();
 }
 
 class _ControlPanelScreenState extends State<ControlPanelScreen> {
   bool _isSessionActive = false;
   String _activeSession = '';
   String _sessionDetails = '';
-  String _matTemp = '78°F';
-  String _heartRateZone = 'Light';
-  String _duration = '8 minutes';
-  String _calories = '45';
+  final String _matTemp = '78°F';
+  final String _heartRateZone = 'Light';
+  final String _duration = '8 minutes';
+  final String _calories = '45';
   DateTime _startTime = DateTime.now();
 
   void _startSession(String session) {
@@ -97,13 +97,13 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.green[900], // Adjusted for dark theme
+                    color: Colors.green, // Adjusted for dark theme
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     'Connected to ${appState.connectedDevice}',
                     style: const TextStyle(
-                        color: Colors.green, fontWeight: FontWeight.bold),
+                        color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -210,7 +210,9 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[800], // Adjusted for dark theme
+        border: Border.all(
+          color: Colors.green,
+        ), // Adjusted for dark theme
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -221,7 +223,10 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
               Container(
                 width: 40,
                 height: 40,
-                color: Colors.blue[900], // Adjusted for dark theme
+                decoration: BoxDecoration(
+                    color: Colors.blue[900],
+                    borderRadius: BorderRadius.circular(5)),
+                // Adjusted for dark theme
                 child: const Icon(Icons.fitness_center, color: Colors.white),
               ),
               const SizedBox(width: 16),
@@ -295,9 +300,11 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: color,
+          border: Border.all(
+            color: Colors.green,
+          ),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
