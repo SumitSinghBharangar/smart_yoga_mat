@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_reactive_ble/flutter_reactive_ble.dart'; // Simulated import
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import 'package:smart_yoga_mat/common/models/session_model.dart';
+import 'package:smart_yoga_mat/services/firestore_service.dart'; // Simulated import
 
 class Session {
   final String sessionType;
@@ -22,12 +24,18 @@ class Session {
 class AppState with ChangeNotifier {
   bool _isConnected = false;
   String? _deviceName;
+  String _connectedDevice = '';
   DiscoveredDevice? _device; // Simulated BLE device
   List<Session> _sessions = [];
+  final FirestoreService _firestoreService = FirestoreService();
 
   bool get isConnected => _isConnected;
   String? get deviceName => _deviceName;
+  String get connectedDevice => _connectedDevice;
   List<Session> get sessions => _sessions;
+
+
+  
 
   void connectToDevice(DiscoveredDevice device) async {
     try {
@@ -67,25 +75,13 @@ class AppState with ChangeNotifier {
     }
   }
 
-  void addSession({
-    required String sessionType,
-    required String duration,
-    required String date,
-    required String matTemp,
-    required String heartRateZone,
-    required String calories,
-  }) {
-    _sessions.insert(
-      0,
-      Session(
-        sessionType: sessionType,
-        duration: duration,
-        date: date,
-        matTemp: matTemp,
-        heartRateZone: heartRateZone,
-        calories: calories,
-      ),
-    );
+  void setConnectionStatus(bool status, String device) {
+    _isConnected = status;
+    _connectedDevice = device;
     notifyListeners();
+  }
+
+  Future<void> addSession(SessionModel session) async {
+    await _firestoreService.addSession(session);
   }
 }

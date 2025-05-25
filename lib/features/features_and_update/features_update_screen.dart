@@ -23,15 +23,12 @@ class _FeaturesUpdateScreenState extends State<FeaturesUpdateScreen> {
     });
 
     try {
-      // Simulate checking for updates with a delay
       await Future.delayed(const Duration(seconds: 2));
 
-      // Simulate a potential error (e.g., 20% chance of failure)
       if (DateTime.now().millisecond % 5 == 0) {
         throw Exception('Failed to check for updates. Please try again.');
       }
 
-      // Simulate update check result (in a real app, this would be an API call)
       const currentVersion = '2.1.4';
       const latestVersion = '2.1.5'; // Simulated latest version
       final updateAvailable = latestVersion != currentVersion;
@@ -108,10 +105,8 @@ class _FeaturesUpdateScreenState extends State<FeaturesUpdateScreen> {
     });
 
     try {
-      // Simulate submitting feedback to Firestore with a delay
       await Future.delayed(const Duration(seconds: 1));
 
-      // Simulate a storage-related error (e.g., 20% chance of failure)
       if (DateTime.now().millisecond % 5 == 0) {
         throw Exception(
             'Device storage is full. Please free up space and try again.');
@@ -135,7 +130,6 @@ class _FeaturesUpdateScreenState extends State<FeaturesUpdateScreen> {
         ),
       );
 
-      // Clear the text field
       _feedbackController.clear();
     } catch (e) {
       setState(() {
