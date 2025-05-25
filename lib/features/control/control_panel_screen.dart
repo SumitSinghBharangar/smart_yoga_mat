@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:smart_yoga_mat/common/models/session_model.dart';
 import 'package:smart_yoga_mat/features/control/session_detil_screen.dart';
 import 'package:smart_yoga_mat/features/music_&_sound/music_sound_screen.dart';
+import 'package:smart_yoga_mat/features/utils/utils.dart';
 import 'package:smart_yoga_mat/provider/app_state.dart';
 
 class ControlPanelScreen extends StatefulWidget {
@@ -59,44 +60,83 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
     });
   }
 
+  // Calculate today's progress
+  Map<String, dynamic> _calculateTodayProgress(List<SessionModel> sessions) {
+    final today = DateTime.now();
+    final todaySessions = sessions.where((session) {
+      final sessionDate = DateTime.parse(session.date);
+      return sessionDate.year == today.year &&
+          sessionDate.month == today.month &&
+          sessionDate.day == today.day;
+    }).toList();
+
+    int totalSessions = todaySessions.length;
+    int totalMinutes = 0;
+    int totalCalories = 0;
+    double maxTemp = 0.0;
+
+    for (var session in todaySessions) {
+      // Parse duration (e.g., "8 minutes" -> 8)
+      final duration = int.tryParse(session.duration.split(' ')[0]) ?? 0;
+      totalMinutes += duration;
+
+      // Parse calories
+      final calories = int.tryParse(session.calories) ?? 0;
+      totalCalories += calories;
+
+      // Parse mat temperature (e.g., "78°F" -> 78.0)
+      final temp = double.tryParse(session.matTemp.replaceAll('°F', '')) ?? 0.0;
+      maxTemp = temp > maxTemp ? temp : maxTemp;
+    }
+
+    return {
+      'sessions': totalSessions.toString(),
+      'practice': '${totalMinutes}m',
+      'calories': totalCalories.toString(),
+      'maxTemp': '${maxTemp.toStringAsFixed(0)}°F',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    final progress = _calculateTodayProgress(appState.sessions);
 
     return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context); // Back to Home Screen
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.music_note, color: Colors.white),
+            onPressed: () {
+              Utils.go(
+                context: context,
+                screen: const MusicSoundScreen(),
+              );
+            },
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () {
-                        Navigator.pop(context); // Back to Home Screen
-                      },
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.music_note),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => MusicSoundScreen()),
-                        );
-                      },
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 10),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.green[100],
+                    color: Colors.green[900], // Adjusted for dark theme
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -108,7 +148,11 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                 const SizedBox(height: 20),
                 const Text(
                   'Choose Your Session',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 _buildSessionCard(
@@ -132,15 +176,15 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                 if (_isSessionActive)
                   GestureDetector(
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => SessionDetilScreen()),
+                      Utils.go(
+                        context: context,
+                        screen: const SessionDetailsScreen(),
                       );
                     },
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.blue[50],
+                        color: Colors.blue[900], // Adjusted for dark theme
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -148,18 +192,25 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                           Expanded(
                             child: Text(
                               _sessionDetails,
-                              style: const TextStyle(fontSize: 14),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.white70,
+                              ),
                             ),
                           ),
                           ElevatedButton(
                             onPressed: _stopSession,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
+                              backgroundColor:
+                                  Colors.red[900], // Adjusted for dark theme
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            child: const Text('Stop'),
+                            child: const Text(
+                              'Stop',
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                         ],
                       ),
@@ -168,16 +219,24 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                 const SizedBox(height: 20),
                 const Text(
                   'Today’s Progress',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildProgressCard('3', 'Sessions'),
-                    _buildProgressCard('45m', 'Practice'),
-                    _buildProgressCard('287', 'Calories'),
-                    _buildProgressCard('85°F', 'Max Temp'),
+                    _buildProgressCard(
+                        progress['sessions'], 'Sessions', Colors.grey[800]!),
+                    _buildProgressCard(
+                        progress['practice'], 'Practice', Colors.grey[800]!),
+                    _buildProgressCard(
+                        progress['calories'], 'Calories', Colors.grey[800]!),
+                    _buildProgressCard(
+                        progress['maxTemp'], 'Max Temp', Colors.grey[800]!),
                   ],
                 ),
               ],
@@ -193,7 +252,7 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: Colors.grey[800], // Adjusted for dark theme
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -204,8 +263,8 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
               Container(
                 width: 40,
                 height: 40,
-                color: Colors.blue[100],
-                child: const Icon(Icons.fitness_center, color: Colors.blue),
+                color: Colors.blue[900], // Adjusted for dark theme
+                child: const Icon(Icons.fitness_center, color: Colors.white),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -215,7 +274,10 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                     Text(
                       title,
                       style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                     Text(
                       subtitle,
@@ -233,49 +295,62 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                 Expanded(
                   child: LinearProgressIndicator(
                     value: 0.4,
-                    backgroundColor: Colors.grey[300],
+                    backgroundColor:
+                        Colors.grey[600], // Adjusted for dark theme
                     valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text('Progress: $progress'),
+                Text(
+                  'Progress: $progress',
+                  style: const TextStyle(color: Colors.white70),
+                ),
               ],
             ),
             const SizedBox(height: 4),
-            Text(remaining,
-                style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(
+              remaining,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
           ],
           const SizedBox(height: 10),
           ElevatedButton(
             onPressed: onStart,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: Colors.blue[900], // Adjusted for dark theme
               minimumSize: const Size(double.infinity, 40),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: Text('Begin $title'),
+            child: Text(
+              'Begin $title',
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildProgressCard(String value, String label) {
+  Widget _buildProgressCard(String value, String label, Color color) {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: color,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
           children: [
             Text(
               value,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
             Text(
               label,

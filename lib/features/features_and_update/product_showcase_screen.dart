@@ -8,6 +8,67 @@ class ProductShowcaseScreen extends StatefulWidget {
 }
 
 class _ProductShowcaseScreenState extends State<ProductShowcaseScreen> {
+  void _handleButtonAction(
+      String title, String dialogMessage, String buttonLabel) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(dialogMessage),
+            const SizedBox(height: 8),
+            Text(
+              title == 'AI Posture Coach'
+                  ? '• Analyzes your posture in real-time\n• Provides instant feedback\n• Improves alignment safely'
+                  : title == 'Smart Mat Pro'
+                      ? '• Enhanced haptic feedback\n• Customizable premium zones\n• Advanced heat therapy'
+                      : '• Sync with friends globally\n• Join live group sessions\n• Beta access to new features',
+              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          if (buttonLabel == 'Upgrade')
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                // Simulate purchase flow
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content:
+                        const Text('Purchase initiated for Smart Mat Pro!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+              child: const Text('Proceed to Purchase'),
+            ),
+          if (buttonLabel == 'Try Beta')
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                // Simulate beta registration
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Registered for Group Sessions beta!'),
+                    backgroundColor: Colors.purple,
+                  ),
+                );
+              },
+              child: const Text('Register for Beta'),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -107,21 +168,8 @@ class _ProductShowcaseScreenState extends State<ProductShowcaseScreen> {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text(title),
-                  content: Text(dialogMessage),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Close'),
-                    ),
-                  ],
-                ),
-              );
-            },
+            onPressed: () =>
+                _handleButtonAction(title, dialogMessage, buttonLabel),
             style: ElevatedButton.styleFrom(
               backgroundColor: buttonColor,
               minimumSize: const Size(double.infinity, 40),

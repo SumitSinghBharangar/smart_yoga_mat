@@ -12,14 +12,88 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
   double _breathingVolume = 70.0;
   double _oceanVolume = 50.0;
   double _forestVolume = 60.0;
-  bool _isPlaying = false;
+  bool _isBreathingPlaying = false;
+  bool _isOceanPlaying = false;
+  bool _isForestPlaying = false;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSoundData();
+  }
+
+  void _fetchSoundData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Simulate fetching sound data or presets with a delay
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Simulate a potential error (e.g., 20% chance of failure)
+      if (DateTime.now().millisecond % 5 == 0) {
+        throw Exception('Failed to load sound data. Please try again.');
+      }
+
+      setState(() {
+        _isLoading = false;
+        // Default values are already set, so no need to update them here
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
+    }
+  }
 
   void _stopAll() {
     setState(() {
-      _isPlaying = false;
+      _isBreathingPlaying = false;
+      _isOceanPlaying = false;
+      _isForestPlaying = false;
       _breathingVolume = 0.0;
       _oceanVolume = 0.0;
       _forestVolume = 0.0;
+    });
+  }
+
+  void _applyPreset(String preset) {
+    setState(() {
+      switch (preset) {
+        case 'Morning Flow':
+          _breathingVolume = 80.0;
+          _oceanVolume = 30.0;
+          _forestVolume = 20.0;
+          _isBreathingPlaying = true;
+          _isOceanPlaying = true;
+          _isForestPlaying = true;
+          break;
+        case 'Evening Calm':
+          _breathingVolume = 20.0;
+          _oceanVolume = 70.0;
+          _forestVolume = 40.0;
+          _isBreathingPlaying = true;
+          _isOceanPlaying = true;
+          _isForestPlaying = true;
+          break;
+        case 'Deep Focus':
+          _breathingVolume = 50.0;
+          _oceanVolume = 20.0;
+          _forestVolume = 60.0;
+          _isBreathingPlaying = true;
+          _isOceanPlaying = true;
+          _isForestPlaying = true;
+          break;
+        case 'Custom Mix':
+        default:
+          // No change for Custom Mix, let user adjust manually
+          break;
+      }
     });
   }
 
@@ -33,7 +107,7 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: Icon(
+          icon: const Icon(
             Icons.arrow_back,
             color: Colors.white,
           ),
@@ -41,9 +115,7 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,100 +134,145 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
                   style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  'Master Controls',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Master Volume: 75%',
-                            style: TextStyle(
-                              color: Colors.white,
+                if (_isLoading)
+                  const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  )
+                else if (_errorMessage != null)
+                  Center(
+                    child: Column(
+                      children: [
+                        Text(
+                          _errorMessage!,
+                          style:
+                              const TextStyle(color: Colors.red, fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+                        ElevatedButton(
+                          onPressed: _fetchSoundData,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          Slider(
-                            value: _masterVolume,
-                            min: 0,
-                            max: 100,
-                            onChanged: (value) {
-                              setState(() {
-                                _masterVolume = value;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
+                          child: const Text('Retry'),
+                        ),
+                      ],
                     ),
-                    ElevatedButton(
-                      onPressed: _stopAll,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[100],
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                  )
+                else ...[
+                  const Text(
+                    'Master Controls',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Master Volume: ${_masterVolume.toInt()}%',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            Slider(
+                              value: _masterVolume,
+                              min: 0,
+                              max: 100,
+                              onChanged: (value) {
+                                setState(() {
+                                  _masterVolume = value;
+                                });
+                              },
+                            ),
+                          ],
                         ),
                       ),
-                      child: const Text(
-                        'Stop All',
-                        style: TextStyle(color: Colors.red),
+                      ElevatedButton(
+                        onPressed: _stopAll,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red[100],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'Stop All',
+                          style: TextStyle(color: Colors.red),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Preset Modes',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    ],
                   ),
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 10,
-                  children: [
-                    _buildPresetButton('Custom Mix', Colors.blue),
-                    _buildPresetButton('Morning Flow', Colors.grey),
-                    _buildPresetButton('Evening Calm', Colors.grey),
-                    _buildPresetButton('Deep Focus', Colors.grey),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _buildSoundCard(
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Preset Modes',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    children: [
+                      _buildPresetButton('Custom Mix', Colors.blue),
+                      _buildPresetButton('Morning Flow', Colors.grey),
+                      _buildPresetButton('Evening Calm', Colors.grey),
+                      _buildPresetButton('Deep Focus', Colors.grey),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _buildSoundCard(
                     'BR',
                     'Breathing Exercise',
                     'Guided breathing patterns',
                     _breathingVolume,
-                    Colors.green, (value) {
-                  setState(() {
-                    _breathingVolume = value;
-                    _isPlaying = true;
-                  });
-                }),
-                _buildSoundCard('WV', 'Ocean Waves', 'Calming ocean sounds',
-                    _oceanVolume, Colors.blue, (value) {
-                  setState(() {
-                    _oceanVolume = value;
-                    _isPlaying = true;
-                  });
-                }),
-                _buildSoundCard('FR', 'Forest Ambient', 'Nature sounds & birds',
-                    _forestVolume, Colors.green, (value) {
-                  setState(() {
-                    _forestVolume = value;
-                    _isPlaying = true;
-                  });
-                }),
+                    Colors.green,
+                    (value) {
+                      setState(() {
+                        _breathingVolume = value;
+                        _isBreathingPlaying = value > 0;
+                      });
+                    },
+                    _isBreathingPlaying,
+                  ),
+                  _buildSoundCard(
+                    'WV',
+                    'Ocean Waves',
+                    'Calming ocean sounds',
+                    _oceanVolume,
+                    Colors.blue,
+                    (value) {
+                      setState(() {
+                        _oceanVolume = value;
+                        _isOceanPlaying = value > 0;
+                      });
+                    },
+                    _isOceanPlaying,
+                  ),
+                  _buildSoundCard(
+                    'FR',
+                    'Forest Ambient',
+                    'Nature sounds & birds',
+                    _forestVolume,
+                    Colors.green,
+                    (value) {
+                      setState(() {
+                        _forestVolume = value;
+                        _isForestPlaying = value > 0;
+                      });
+                    },
+                    _isForestPlaying,
+                  ),
+                ],
               ],
             ),
           ),
@@ -166,9 +283,7 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
 
   Widget _buildPresetButton(String label, Color color) {
     return ElevatedButton(
-      onPressed: () {
-        // Preset logic will be added later
-      },
+      onPressed: () => _applyPreset(label),
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
         shape: RoundedRectangleBorder(
@@ -182,8 +297,14 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
     );
   }
 
-  Widget _buildSoundCard(String iconLabel, String title, String subtitle,
-      double volume, Color playColor, Function(double) onVolumeChanged) {
+  Widget _buildSoundCard(
+      String iconLabel,
+      String title,
+      String subtitle,
+      double volume,
+      Color playColor,
+      Function(double) onVolumeChanged,
+      bool isPlaying) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
@@ -232,9 +353,7 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
                         children: [
                           Text(
                             'Volume: ${volume.toInt()}%',
-                            style: TextStyle(
-                              color: Colors.white,
-                            ),
+                            style: const TextStyle(color: Colors.white),
                           ),
                           Slider(
                             value: volume,
@@ -246,10 +365,10 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(volume > 0 ? Icons.play_arrow : Icons.pause,
+                      icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow,
                           color: playColor),
                       onPressed: () {
-                        onVolumeChanged(volume > 0 ? 0 : 50);
+                        onVolumeChanged(isPlaying ? 0 : 50);
                       },
                     ),
                   ],

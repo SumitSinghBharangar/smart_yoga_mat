@@ -10,6 +10,86 @@ class FeaturesUpdateScreen extends StatefulWidget {
 }
 
 class _FeaturesUpdateScreenState extends State<FeaturesUpdateScreen> {
+  String _updateMessage = 'Up to date';
+  bool _isChecking = false;
+  String? _errorMessage;
+
+  void _checkForUpdates() async {
+    setState(() {
+      _isChecking = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Simulate checking for updates with a delay
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Simulate a potential error (e.g., 20% chance of failure)
+      if (DateTime.now().millisecond % 5 == 0) {
+        throw Exception('Failed to check for updates. Please try again.');
+      }
+
+      // Simulate update check result (in a real app, this would be an API call)
+      const currentVersion = '2.1.4';
+      const latestVersion = '2.1.5'; // Simulated latest version
+      final updateAvailable = latestVersion != currentVersion;
+
+      setState(() {
+        _isChecking = false;
+        _updateMessage = updateAvailable
+            ? 'Update available: v$latestVersion'
+            : 'No updates available';
+      });
+
+      // Show dialog with result
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.grey[800],
+          title: const Text(
+            'Update Check',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Text(
+            _updateMessage,
+            style: const TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Close',
+                style: TextStyle(color: Colors.blue),
+              ),
+            ),
+            if (updateAvailable)
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  // In a real app, this would trigger the update process
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Update started...'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Update Now',
+                  style: TextStyle(color: Colors.blue),
+                ),
+              ),
+          ],
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        _isChecking = false;
+        _errorMessage = e.toString();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,7 +100,7 @@ class _FeaturesUpdateScreenState extends State<FeaturesUpdateScreen> {
           onPressed: () {
             Navigator.pop(context);
           },
-          icon: Icon(
+          icon: const Icon(
             Icons.arrow_back,
             color: Colors.white,
           ),
@@ -68,30 +148,55 @@ class _FeaturesUpdateScreenState extends State<FeaturesUpdateScreen> {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
+                          children: [
+                            const Text(
                               'Current Version: v2.1.4',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            Text('Released: Nov 2024 • Up to date'),
+                            Text(
+                              _errorMessage != null
+                                  ? 'Error checking updates'
+                                  : 'Released: Nov 2024 • $_updateMessage',
+                            ),
                           ],
                         ),
                       ),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Check for updates logic will be added later
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text('Check for Updates'),
-                      ),
+                      _errorMessage != null
+                          ? ElevatedButton(
+                              onPressed: _checkForUpdates,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text('Retry'),
+                            )
+                          : ElevatedButton(
+                              onPressed: _isChecking ? null : _checkForUpdates,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(
+                                _isChecking
+                                    ? 'Checking...'
+                                    : 'Check for Updates',
+                              ),
+                            ),
                     ],
                   ),
                 ),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.red, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
                 const SizedBox(height: 20),
                 const Text(
                   'Your Practice Analytics',
@@ -240,7 +345,7 @@ class _FeaturesUpdateScreenState extends State<FeaturesUpdateScreen> {
             onPressed: () {
               Utils.go(
                 context: context,
-                screen: ProductShowcaseScreen(),
+                screen: const ProductShowcaseScreen(),
               );
             },
             style: ElevatedButton.styleFrom(
