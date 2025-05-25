@@ -12,6 +12,7 @@ class SessionDetailsScreen extends StatefulWidget {
 class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   bool _isLoading = true;
   String? _errorMessage;
+  bool _canRetry = true;
 
   @override
   void initState() {
@@ -24,6 +25,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
       setState(() {
         _isLoading = true;
         _errorMessage = null;
+        _canRetry = false;
       });
 
       // Simulate a network delay (in a real app, this is handled by Firestore via AppState)
@@ -39,10 +41,22 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
       setState(() {
         _isLoading = false;
       });
+
+      // Reset retry cooldown
+      await Future.delayed(const Duration(seconds: 2));
+      setState(() {
+        _canRetry = true;
+      });
     } catch (e) {
       setState(() {
         _isLoading = false;
         _errorMessage = 'Error loading sessions: $e';
+      });
+
+      // Reset retry cooldown after 2 seconds
+      await Future.delayed(const Duration(seconds: 2));
+      setState(() {
+        _canRetry = true;
       });
     }
   }
@@ -103,14 +117,16 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                         ),
                         const SizedBox(height: 10),
                         ElevatedButton(
-                          onPressed: _fetchSessions,
+                          onPressed: _canRetry ? _fetchSessions : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: const Text('Retry'),
+                          child: Text(
+                            _canRetry ? 'Retry' : 'Please wait...',
+                          ),
                         ),
                       ],
                     ),
@@ -246,7 +262,7 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[800], // Dark background for white text
+        color: Colors.grey[800],
         border: Border.all(color: Colors.green, width: 1.5),
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
@@ -259,7 +275,6 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
       ),
       child: Row(
         children: [
-          // Icon to represent session type
           Icon(
             sessionType.toLowerCase().contains('warm')
                 ? Icons.local_fire_department
@@ -268,7 +283,6 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
             size: 30,
           ),
           const SizedBox(width: 12),
-          // Session details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,7 +307,6 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
               ],
             ),
           ),
-          // Duration and Calories with icons
           Row(
             children: [
               const Icon(Icons.timer, color: Colors.white70, size: 20),

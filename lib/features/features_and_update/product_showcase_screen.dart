@@ -8,6 +8,41 @@ class ProductShowcaseScreen extends StatefulWidget {
 }
 
 class _ProductShowcaseScreenState extends State<ProductShowcaseScreen> {
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProductData();
+  }
+
+  void _fetchProductData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Simulate fetching product data with a delay
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Simulate a potential error (e.g., 20% chance of failure)
+      if (DateTime.now().millisecond % 5 == 0) {
+        throw Exception('Failed to load product data. Please try again.');
+      }
+
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
+    }
+  }
+
   void _handleButtonAction(
       String title, String dialogMessage, String buttonLabel) {
     showDialog(
@@ -102,30 +137,60 @@ class _ProductShowcaseScreenState extends State<ProductShowcaseScreen> {
                   style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
                 const SizedBox(height: 20),
-                _buildProductCard(
-                  context,
-                  'AI Posture Coach',
-                  'Real-time posture correction using AI technology',
-                  'Learn More',
-                  Colors.blue,
-                  'Learn more about AI Posture Coach',
-                ),
-                _buildProductCard(
-                  context,
-                  'Smart Mat Pro',
-                  'Advanced haptic feedback & premium zones',
-                  'Upgrade',
-                  Colors.green,
-                  'Upgrade to Smart Mat Pro',
-                ),
-                _buildProductCard(
-                  context,
-                  'Group Sessions',
-                  'Practice with friends in sync',
-                  'Try Beta',
-                  Colors.purple,
-                  'Join the Group Sessions beta',
-                ),
+                if (_isLoading)
+                  const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                else if (_errorMessage != null)
+                  Center(
+                    child: Column(
+                      children: [
+                        Text(
+                          _errorMessage!,
+                          style:
+                              const TextStyle(color: Colors.red, fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+                        ElevatedButton(
+                          onPressed: _fetchProductData,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  )
+                else ...[
+                  _buildProductCard(
+                    context,
+                    'AI Posture Coach',
+                    'Real-time posture correction using AI technology',
+                    'Learn More',
+                    Colors.blue,
+                    'Learn more about AI Posture Coach',
+                  ),
+                  _buildProductCard(
+                    context,
+                    'Smart Mat Pro',
+                    'Advanced haptic feedback & premium zones',
+                    'Upgrade',
+                    Colors.green,
+                    'Upgrade to Smart Mat Pro',
+                  ),
+                  _buildProductCard(
+                    context,
+                    'Group Sessions',
+                    'Practice with friends in sync',
+                    'Try Beta',
+                    Colors.purple,
+                    'Join the Group Sessions beta',
+                  ),
+                ],
               ],
             ),
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_yoga_mat/common/buttons/scale_button.dart';
 
 class MusicSoundScreen extends StatefulWidget {
   const MusicSoundScreen({super.key});
@@ -17,6 +18,7 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
   bool _isForestPlaying = false;
   bool _isLoading = true;
   String? _errorMessage;
+  String selectedPreset = 'Custom Mix';
 
   @override
   void initState() {
@@ -64,6 +66,8 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
 
   void _applyPreset(String preset) {
     setState(() {
+      selectedPreset = preset; // Track the selected preset
+
       switch (preset) {
         case 'Morning Flow':
           _breathingVolume = 80.0;
@@ -91,7 +95,8 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
           break;
         case 'Custom Mix':
         default:
-          // No change for Custom Mix, let user adjust manually
+          // Reset to custom mix - user can adjust manually
+          // Optionally set default values or keep current settings
           break;
       }
     });
@@ -220,13 +225,23 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 10,
+                  Column(
                     children: [
-                      _buildPresetButton('Custom Mix', Colors.blue),
-                      _buildPresetButton('Morning Flow', Colors.grey),
-                      _buildPresetButton('Evening Calm', Colors.grey),
-                      _buildPresetButton('Deep Focus', Colors.grey),
+                      Row(
+                        children: [
+                          _buildPresetButton('Custom Mix', Colors.grey),
+                          Spacer(),
+                          _buildPresetButton('Morning Flow', Colors.grey),
+                        ],
+                      ),
+                      const SizedBox(height: 8), // Space between rows
+                      Row(
+                        children: [
+                          _buildPresetButton('Evening Calm', Colors.grey),
+                          Spacer(),
+                          _buildPresetButton('Deep Focus', Colors.grey),
+                        ],
+                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -282,17 +297,42 @@ class _MusicSoundScreenState extends State<MusicSoundScreen> {
   }
 
   Widget _buildPresetButton(String label, Color color) {
-    return ElevatedButton(
-      onPressed: () => _applyPreset(label),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        shape: RoundedRectangleBorder(
+    // You'll need to track which preset is selected
+    // Add this variable to your widget's state if not already present:
+    // String? selectedPreset;
+
+    bool isSelected = selectedPreset == label;
+
+    return ScaleButton(
+      onTap: () {
+        setState(() {
+          selectedPreset = label;
+          _applyPreset(label); // Update selected preset
+        });
+        _applyPreset(label);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        width: MediaQuery.of(context).size.width / 2.3,
+        curve: Curves.easeInOut,
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.lightGreen.shade200 : color,
+          border: Border.all(
+            color: isSelected ? Colors.green.shade800 : Colors.transparent,
+            width: 2,
+          ),
           borderRadius: BorderRadius.circular(8),
         ),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(color: Colors.white),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.green.shade800 : Colors.white,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
       ),
     );
   }

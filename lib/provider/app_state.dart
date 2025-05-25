@@ -26,7 +26,7 @@ class AppState with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addSession(SessionModel session) async {
+  Future<void> addSession(SessionModel session, {required String sessionType}) async {
     await _firestoreService.addSession(session);
   }
 }

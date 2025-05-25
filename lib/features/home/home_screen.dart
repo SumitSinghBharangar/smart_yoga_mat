@@ -20,6 +20,46 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRecentActivity();
+  }
+
+  void _fetchRecentActivity() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Simulate fetching recent activity data with a delay
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Simulate a potential error (e.g., 20% chance of failure)
+      if (DateTime.now().millisecond % 5 == 0) {
+        throw Exception('Failed to load recent activity. Please try again.');
+      }
+
+      final appState = Provider.of<AppState>(context, listen: false);
+      if (appState.sessions == null) {
+        throw Exception('Failed to load sessions');
+      }
+
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
@@ -108,41 +148,71 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.green, width: 1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Recent Activity',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      recentSession != null
-                          ? '${recentSession.sessionType} Session • ${recentSession.duration}'
-                          : 'No recent sessions',
-                      style: const TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                    if (recentSession != null) ...[
-                      const SizedBox(height: 4),
+              if (_isLoading)
+                const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                )
+              else if (_errorMessage != null)
+                Center(
+                  child: Column(
+                    children: [
                       Text(
-                        'Date: ${recentSession.date.split(' ')[0]} • Calories: ${recentSession.calories}',
-                        style:
-                            const TextStyle(fontSize: 14, color: Colors.grey),
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.red, fontSize: 16),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: _fetchRecentActivity,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Retry'),
                       ),
                     ],
-                  ],
+                  ),
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.green, width: 1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Recent Activity',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        recentSession != null
+                            ? '${recentSession.sessionType} Session • ${recentSession.duration}'
+                            : 'No recent sessions',
+                        style:
+                            const TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                      if (recentSession != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Date: ${recentSession.date.split(' ')[0]} • Calories: ${recentSession.calories}',
+                          style:
+                              const TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              ),
               const Spacer(),
               Center(
                 child: DynamicButton.fromText(
@@ -155,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ScaleButton(
                 onTap: () {
                   Utils.go(

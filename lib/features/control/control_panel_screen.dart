@@ -51,7 +51,10 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
     );
 
     // Save to Firestore via Provider
-    appState.addSession(session);
+    appState.addSession(
+      session,
+      sessionType: _activeSession,
+    );
 
     setState(() {
       _isSessionActive = false;
@@ -252,7 +255,7 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[800], // Adjusted for dark theme
+        border: Border.all(color: Colors.green), // Adjusted for dark theme
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -337,9 +340,10 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: color,
+          border: Border.all(color: Colors.green),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(

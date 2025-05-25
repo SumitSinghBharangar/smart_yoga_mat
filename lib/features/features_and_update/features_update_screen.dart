@@ -13,6 +13,8 @@ class _FeaturesUpdateScreenState extends State<FeaturesUpdateScreen> {
   String _updateMessage = 'Up to date';
   bool _isChecking = false;
   String? _errorMessage;
+  final TextEditingController _feedbackController = TextEditingController();
+  bool _isSubmittingFeedback = false;
 
   void _checkForUpdates() async {
     setState(() {
@@ -88,6 +90,64 @@ class _FeaturesUpdateScreenState extends State<FeaturesUpdateScreen> {
         _errorMessage = e.toString();
       });
     }
+  }
+
+  void _submitFeedback() async {
+    if (_feedbackController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your feedback'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSubmittingFeedback = true;
+    });
+
+    try {
+      // Simulate submitting feedback to Firestore with a delay
+      await Future.delayed(const Duration(seconds: 1));
+
+      // In a real app, you would use Firestore to store the feedback
+      // Example: await FirebaseFirestore.instance.collection('feedback').add({
+      //   'message': _feedbackController.text,
+      //   'timestamp': DateTime.now().toString(),
+      // });
+
+      setState(() {
+        _isSubmittingFeedback = false;
+      });
+
+      // Show confirmation
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Feedback submitted successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Clear the text field
+      _feedbackController.clear();
+    } catch (e) {
+      setState(() {
+        _isSubmittingFeedback = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to submit feedback: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _feedbackController.dispose();
+    super.dispose();
   }
 
   @override
@@ -259,6 +319,66 @@ class _FeaturesUpdateScreenState extends State<FeaturesUpdateScreen> {
                   'Practice with friends in sync',
                   'Try Beta',
                   Colors.purple,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Share Your Feedback',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.green, width: 1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        controller: _feedbackController,
+                        maxLines: 3,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Tell us about your experience...',
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: Colors.green),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: Colors.green),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(color: Colors.blue),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed:
+                            _isSubmittingFeedback ? null : _submitFeedback,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          minimumSize: const Size(double.infinity, 40),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          _isSubmittingFeedback
+                              ? 'Submitting...'
+                              : 'Submit Feedback',
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
